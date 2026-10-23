@@ -1,0 +1,51 @@
+name: Android APK Derleyici
+
+on:
+  push:
+    branches: [ "main", "master" ]
+  workflow_dispatch:
+
+jobs:
+  build-apk:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Kodu Çek
+        uses: actions/checkout@v4
+
+      - name: Node.js Kurulumu
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Java JDK 17 Kurulumu
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'zulu'
+          java-version: '17'
+
+      - name: Android SDK Kurulumu
+        uses: android-actions/setup-android@v3
+
+      - name: Capacitor & Bağımlılıkları Kur
+        run: |
+          npm init -y
+          npm install @capacitor/core @capacitor/cli @capacitor/android
+          npx cap init "Aile Faiz Takip" "com.ailefaiz.takip" --web-dir .
+          npx cap add android
+
+      - name: Web Kodlarını Android Klasörüne Kopyala
+        run: |
+          npx cap copy android
+
+      - name: Android APK Derle (Gradle)
+        run: |
+          cd android
+          chmod +x ./gradlew
+          ./gradlew assembleDebug
+
+      - name: APK Dosyasını İndirilebilir Yap
+        uses: actions/upload-artifact@v4
+        with:
+          name: AileFaizTakip-Debug-APK
+          path: android/app/build/outputs/apk/debug/app-debug.apk
